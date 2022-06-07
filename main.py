@@ -1,5 +1,5 @@
 import sys
-from random import randint
+from random import randint, choice
 from time import sleep
 
 """Класс для создания размера здания и людей на этаже"""
@@ -15,11 +15,8 @@ class People:
         self.floors = randint(5, 21)
         self.people_on_floors = []
 
-    """
-    Создает список со случайными людьми которым нужно на определенный этаж.
-    """
-
     def _people_floors(self):
+        """Создает список со случайными людьми которым нужно на определенный этаж."""
         people = []
         for i in range(1, self.floors + 1):
             for _ in range(randint(0, 10)):
@@ -40,9 +37,8 @@ class Elevator(People):
         super(Elevator, self).__init__()
         self.elevator = {}
 
-    """Генерирует кнопки (Вверх/Вниз)"""
-
     def _button_for_elevator(self, floor):
+        """Генерирует кнопки (Вверх/Вниз)"""
         x = ''
         people = self.people_on_floors[floor]
         if floor == 0:
@@ -58,9 +54,8 @@ class Elevator(People):
                 x = 'Down'
         return x
 
-    """Наполнение списка"""
-
     def _create(self):
+        """Наполнение списка"""
         self._people_floors()
         for floor in range(self.floors):
             x = self._button_for_elevator(floor)
@@ -98,18 +93,22 @@ class Run(Elevator):
                     continue
 
     def _output(self, idx):
-        """Убирает со списка людей которым нужно выйти на конкретном этаже"""
+        """Убирает со списка людей которым нужно выйти на конкретном этаже. Добавляет человека со случайным этажом."""
         for _ in range(len(self.lift)):
             if idx in self.lift:
                 self.lift.remove(idx)
                 self.elevator[idx]['people_exit'] += 1
+                self._input(idx=idx)
+
+    def _input(self, idx):
+        """Добавляет на вышедшем этаже нового человека со случайным этажом."""
+        x = choice([x for x in range(1, self.floors + 1) if x != idx])
+        self.elevator[idx]['people'].append(x)
 
     def _btn(self, idx):
         """Переоределяет кнопи лифта на этаже"""
         btn = self.elevator[idx]['people']
-        if len(btn) == 0:
-            self.elevator[idx]['button'] = ''
-        elif btn[0] > idx:
+        if btn[0] > idx:
             self.elevator[idx]['button'] = 'Up'
         elif btn[0] < idx:
             self.elevator[idx]['button'] = 'Down'
@@ -128,20 +127,17 @@ class Print(Run):
         self.count = 1
         self.max_lift = self.floors
         self.min_lift = 1
-        self.exit_count = 0
 
         self._create()
 
-    """Вывод в консоль результата."""
-
     def _conclusion(self, count):
+        """Вывод в консоль результата."""
         sys.stdout.write(
             f"\rЭтаж: {count}. Exit: {self.elevator[count]['people_exit']} |  {self.lift}  |{self.elevator[count]['button']}| {self.elevator[count]['people']}")
         sleep(1)
 
-    """Логика движения лифта вверх."""
-
     def _up(self):
+        """Логика движения лифта вверх."""
         while self.count <= self.max_lift:
             # Кнопка лифта
             self.button_lift = 'Up'
@@ -156,17 +152,13 @@ class Print(Run):
                 self._down()
             elif len(self.lift) == 0:  # Иначе-если, лифт пустой, ехать к максимальному этажу.
                 self.max_lift = self.floors
-                self.exit_count += 1
-            else:  # Высчитывает макс. этаж. Обновляет счётчик выхода из программы.
+            else:  # Высчитывает макс. этаж.
                 self.max_lift = max(self.lift)
-                self.exit_count = 0
 
             self.count += 1
-            self._exit()
-
-    """Логика движения лифта вниз."""
 
     def _down(self):
+        """Логика движения лифта вниз."""
         while self.count >= self.min_lift:
             # Кнопка лифта
             self.button_lift = 'Down'
@@ -177,20 +169,11 @@ class Print(Run):
 
             if len(self.lift) == 0:  # Иначе-если, лифт пустой, ехать к минимальному этажу.
                 self.min_lift = 1
-                self.exit_count += 1
-            else:  # Высчитывает мин. этаж. Обновляет счётчик выхода из программы.
+
+            else:  # Высчитывает мин. этаж.
                 self.min_lift = min(self.lift)
-                self.exit_count = 0
 
             self.count -= 1
-            self._exit()
-
-    """Выход из программы если больше нет людей ждущих лифт."""
-
-    def _exit(self):
-        if self.exit_count == self.floors:
-            print('\nБольше нет пасажиров.')
-            exit()
 
 
 Print()._up()
